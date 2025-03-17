@@ -26,10 +26,15 @@ export const paymentInfoMap: Record<
     title: "PayPal",
     icon: <PayPal />,
   },
+  "pp_authorizenet_authorizenet":{
+    title: "Authorizenet",
+    icon: <CreditCard />,
+  },
   pp_system_default: {
     title: "Manual Payment",
     icon: <CreditCard />,
   },
+
   // Add more payment providers here
 }
 
@@ -42,6 +47,10 @@ export const isPaypal = (providerId?: string) => {
 }
 export const isManual = (providerId?: string) => {
   return providerId?.startsWith("pp_system_default")
+}
+
+export const isAuthorizeNet = (providerId?: string) => {
+  return providerId?.startsWith("pp_authorizenet")
 }
 
 // Add currencies that don't need to be divided by 100

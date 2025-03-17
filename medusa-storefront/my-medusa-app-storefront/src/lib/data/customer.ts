@@ -16,8 +16,12 @@ import {
 
 export const retrieveCustomer =
   async (): Promise<HttpTypes.StoreCustomer | null> => {
+    const authHeaders = await getAuthHeaders()
+
+    if (!authHeaders) return null
+
     const headers = {
-      ...(await getAuthHeaders()),
+      ...authHeaders,
     }
 
     const next = {
@@ -32,6 +36,7 @@ export const retrieveCustomer =
         },
         headers,
         next,
+        cache: "force-cache",
       })
       .then(({ customer }) => customer)
       .catch(() => null)
@@ -67,6 +72,8 @@ export async function signup(_currentState: unknown, formData: FormData) {
       email: customerForm.email,
       password: password,
     })
+
+    await setAuthToken(token as string)
 
     const headers = {
       ...(await getAuthHeaders()),
@@ -122,8 +129,10 @@ export async function login(_currentState: unknown, formData: FormData) {
 export async function signout(countryCode: string) {
   await sdk.auth.logout()
   removeAuthToken()
-  revalidateTag("auth")
-  revalidateTag("customer")
+  
+  const customerCacheTag = await getCacheTag("customers")
+  revalidateTag(customerCacheTag)
+  
   redirect(`/${countryCode}/account`)
 }
 
@@ -138,13 +147,17 @@ export async function transferCart() {
 
   await sdk.store.cart.transferCart(cartId, {}, headers)
 
-  revalidateTag("cart")
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
 }
 
 export const addCustomerAddress = async (
-  _currentState: unknown,
+  currentState: Record<string, unknown>,
   formData: FormData
 ): Promise<any> => {
+  const isDefaultBilling = (currentState.isDefaultBilling as boolean) || false
+  const isDefaultShipping = (currentState.isDefaultShipping as boolean) || false
+
   const address = {
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
@@ -156,6 +169,8 @@ export const addCustomerAddress = async (
     province: formData.get("province") as string,
     country_code: formData.get("country_code") as string,
     phone: formData.get("phone") as string,
+    is_default_billing: isDefaultBilling,
+    is_default_shipping: isDefaultShipping,
   }
 
   const headers = {
@@ -197,7 +212,12 @@ export const updateCustomerAddress = async (
   currentState: Record<string, unknown>,
   formData: FormData
 ): Promise<any> => {
-  const addressId = currentState.addressId as string
+  const addressId =
+    (currentState.addressId as string) || (formData.get("addressId") as string)
+
+  if (!addressId) {
+    return { success: false, error: "Address ID is required" }
+  }
 
   const address = {
     first_name: formData.get("first_name") as string,
@@ -209,7 +229,12 @@ export const updateCustomerAddress = async (
     postal_code: formData.get("postal_code") as string,
     province: formData.get("province") as string,
     country_code: formData.get("country_code") as string,
-    phone: formData.get("phone") as string,
+  } as HttpTypes.StoreUpdateCustomerAddress
+
+  const phone = formData.get("phone") as string
+
+  if (phone) {
+    address.phone = phone
   }
 
   const headers = {

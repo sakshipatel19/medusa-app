@@ -12,5 +12,21 @@ module.exports = defineConfig({
       jwtSecret: process.env.JWT_SECRET || "supersecret",
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     }
-  }
+  },modules: [
+    {
+      resolve: "@medusajs/medusa/payment",
+      options: {
+        providers: [
+          {
+            resolve: "@visa/payment-anet",
+            id: "authorizenet",
+            options: {
+              api_login_id: process.env.AUTHORIZE_NET_API_LOGIN_ID,
+              transaction_key: process.env.AUTHORIZE_NET_TRANSACTION_KEY,
+            },
+          },
+        ],
+      },
+    },
+  ]
 })

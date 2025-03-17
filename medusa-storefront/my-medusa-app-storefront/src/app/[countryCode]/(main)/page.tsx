@@ -8,7 +8,7 @@ import { getRegion } from "@lib/data/regions"
 export const metadata: Metadata = {
   title: "Medusa Next.js Starter Template",
   description:
-    "A performant frontend ecommerce starter template with Next.js 14 and Medusa.",
+    "A performant frontend ecommerce starter template with Next.js 15 and Medusa.",
 }
 
 export default async function Home(props: {
@@ -18,10 +18,11 @@ export default async function Home(props: {
 
   const { countryCode } = params
 
-  const { collections } = await listCollections({
-    fields: "*products",
-  })
   const region = await getRegion(countryCode)
+
+  const { collections } = await listCollections({
+    fields: "id, handle, title",
+  })
 
   if (!collections || !region) {
     return null
